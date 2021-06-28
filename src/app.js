@@ -1,23 +1,14 @@
 import express from "express";
 import cors from "cors";
-import pg from "pg";
 import bcrypt from "bcrypt";
 import * as uuid from "uuid";
 import joi from "joi";
+import connection from "./database.js";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const { Pool } = pg;
-
-const connection = new Pool({
-  user: "postgres",
-  password: "1234",
-  host: "localhost",
-  port: 5432,
-  database: "db_mywallet",
-});
 
 app.post("/user/signup", async (req, res) => {
   const { name, email, password } = req.body;
@@ -77,7 +68,7 @@ app.post("/user/login", async (req, res) => {
       const username = userResult.rows[0].name;
 
       await connection.query(
-        `INSERT INTO sessionuser ("userId", token) VALUES ($1 ,$2)`,
+        `INSERT INTO sessionUsers ("userId", token) VALUES ($1 ,$2)`,
         [userId, token]
       );
       return res.send({ username, token });
@@ -96,7 +87,7 @@ app.post("/home/signout", async (req, res) => {
   if (!token) return res.sendStatus(401);
   try {
     await connection.query(
-      `DELETE FROM sessionuser 
+      `DELETE FROM sessionUsers 
        WHERE token = $1`,
       [token]
     );
@@ -126,10 +117,10 @@ app.post("/home/registries", async (req, res) => {
   }
   try {
     const user = await connection.query(
-      `SELECT * FROM sessionuser
+      `SELECT * FROM sessionUsers
       JOIN users
-      ON sessionuser."userId" = users.id
-      WHERE sessionuser.token = $1`,
+      ON sessionUsers."userId" = users.id
+      WHERE sessionUsers.token = $1`,
       [token]
     );
 
@@ -157,7 +148,7 @@ app.get("/home/registries", async (req, res) => {
   try {
     const validateUser = await connection.query(
       `SELECT * 
-      FROM sessionuser
+      FROM sessionUsers
       WHERE token = $1`,
       [token]
     );
@@ -191,6 +182,4 @@ app.get("/user/signup", async (req, res) => {
   }
 });
 
-app.listen(4000, () => {
-  console.log("Server listening on port 4000.");
-});
+export default app;
