@@ -157,8 +157,8 @@ app.get("/home/registries", async (req, res) => {
   try {
     const validateUser = await connection.query(
       `SELECT * 
-                                                       FROM sessionuser
-                                                       WHERE token = $1`,
+      FROM sessionuser
+      WHERE token = $1`,
       [token]
     );
 
