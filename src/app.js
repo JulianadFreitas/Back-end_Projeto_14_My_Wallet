@@ -9,7 +9,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-
 app.post("/user/signup", async (req, res) => {
   const { name, email, password } = req.body;
   const schema = joi.object({
@@ -33,6 +32,7 @@ app.post("/user/signup", async (req, res) => {
         `INSERT INTO users (name , email, password) VALUES ($1 ,$2, $3)`,
         [name, email, `${passwordHash}`]
       );
+      console.log(users.rows);
       res.sendStatus(201);
     } else {
       res.sendStatus(409);
@@ -68,7 +68,7 @@ app.post("/user/login", async (req, res) => {
       const username = userResult.rows[0].name;
 
       await connection.query(
-        `INSERT INTO sessionUsers ("userId", token) VALUES ($1 ,$2)`,
+        `INSERT INTO "sessionUsers" ("userId", token) VALUES ($1 ,$2)`,
         [userId, token]
       );
       return res.send({ username, token });
@@ -83,11 +83,11 @@ app.post("/user/login", async (req, res) => {
 
 app.post("/home/signout", async (req, res) => {
   const authorization = req.headers["authorization"];
-  const token = authorization.replace("Bearer ", "");
+  const token = authorization?.replace("Bearer ", "");
   if (!token) return res.sendStatus(401);
   try {
     await connection.query(
-      `DELETE FROM sessionUsers 
+      `DELETE FROM "sessionUsers" 
        WHERE token = $1`,
       [token]
     );
@@ -100,7 +100,7 @@ app.post("/home/signout", async (req, res) => {
 
 app.post("/home/registries", async (req, res) => {
   const authorization = req.headers["authorization"];
-  const token = authorization.replace("Bearer ", "");
+  const token = authorization?.replace("Bearer ", "");
   const { value, description, type } = req.body;
   const date = new Date();
   const schema = joi.object({
@@ -117,10 +117,10 @@ app.post("/home/registries", async (req, res) => {
   }
   try {
     const user = await connection.query(
-      `SELECT * FROM sessionUsers
+      `SELECT * FROM "sessionUsers"
       JOIN users
-      ON sessionUsers."userId" = users.id
-      WHERE sessionUsers.token = $1`,
+      ON "sessionUsers"."userId" = users.id
+      WHERE "sessionUsers".token = $1`,
       [token]
     );
 
@@ -143,12 +143,12 @@ app.post("/home/registries", async (req, res) => {
 
 app.get("/home/registries", async (req, res) => {
   const authorization = req.headers["authorization"];
-  const token = authorization.replace("Bearer ", "");
+  const token = authorization?.replace("Bearer ", "");
 
   try {
     const validateUser = await connection.query(
       `SELECT * 
-      FROM sessionUsers
+      FROM "sessionUsers"
       WHERE token = $1`,
       [token]
     );
@@ -168,6 +168,7 @@ app.get("/home/registries", async (req, res) => {
     console.log(e);
     return res.sendStatus(500);
   }
+  
 });
 
 app.get("/user/signup", async (req, res) => {
